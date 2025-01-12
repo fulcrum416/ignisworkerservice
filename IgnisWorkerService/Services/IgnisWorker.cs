@@ -54,19 +54,19 @@ namespace IgnisWorkerService.Services
                 .WithClientId(mqttDefaults.ClientId)
                 .WithTcpServer(mqttDefaults.TCPServer, mqttDefaults.Port)     
                 .WithCredentials(mqttDefaults.Username,mqttDefaults.Password)
-                .WithTlsOptions(new MqttClientTlsOptions
-                {
-                    UseTls = true,
-                    CertificateValidationHandler = ctx =>
-                    {
-                        // Optionally validate the broker's certificate
-                        return true; // Accept all certificates (not recommended for production)
+                //.WithTlsOptions(new MqttClientTlsOptions
+                //{
+                //    UseTls = true,
+                //    CertificateValidationHandler = ctx =>
+                //    {
+                //        // Optionally validate the broker's certificate
+                //        return true; // Accept all certificates (not recommended for production)
 
-                    },
-                    AllowUntrustedCertificates = true,
-                    IgnoreCertificateChainErrors = true,
-                    IgnoreCertificateRevocationErrors = true,
-                })
+                //    },
+                //    AllowUntrustedCertificates = true,
+                //    IgnoreCertificateChainErrors = true,
+                //    IgnoreCertificateRevocationErrors = true,
+                //})
                 .WithProtocolVersion(MQTTnet.Formatter.MqttProtocolVersion.V311)
                 .WithCleanSession()
                 .Build();
