@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace IgnisWorkerService.Services
 {
@@ -128,42 +129,76 @@ namespace IgnisWorkerService.Services
         {
             using (var scope = _scopeFactor.CreateScope())
             {
+                
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var tagDef = db.TagsDefinitions.ToList();
-                DateTime _dt = DateTime.UtcNow;
-                var tags = payload.Split(',');
-                foreach (var tag in tags)
+
+                using(var transaction = await db.Database.BeginTransactionAsync())
                 {
-                    var data = tag.Split("=");
-
-                 
-                    if (data[0].ToString() == "DT")
+                    try
                     {
-                        _dt = data[1].ToString().ToDateTimeUtcFromString();
-                    }
-                    else
-                    {
-                        var _tag = tagDef.Where(m => m.DataTag == data[0]).FirstOrDefault();
-
-                        if (_tag != null && data[1] != null)
+                        var tagDef = db.TagsDefinitions.ToList();
+                        DateTime _dt = DateTime.UtcNow;
+                        var tags = payload.Split(',');
+                        foreach (var tag in tags)
                         {
-                            var tagData = new Tag();
-                            tagData.Name = _tag.UnitTag;
-                            tagData.Type = _tag.UnitType;
-                            tagData.Unit = _tag.Unit;
-                            tagData.Category = _tag.Category;
-                            tagData.Description = _tag.Description;
-                            tagData.TagValue = data[1].ToDecimalFromString();
-                            tagData.InDate = DateTime.UtcNow;
-                            tagData.LogDate = _dt;
-                            await db.Tags.AddAsync(tagData);
-                        }
-                    }
+                            var data = tag.Split("=");
 
-                    
-                   
+
+                            if (data[0].ToString() == "DT")
+                            {
+                                _dt = data[1].ToString().ToDateTimeUtcFromString();
+                            }
+                            else
+                            {
+                                var _tag = tagDef.Where(m => m.DataTag == data[0]).FirstOrDefault();
+
+                                if (_tag != null && data[1] != null)
+                                {
+                                    var tagData = new Tag()
+                                    {
+                                        Name = _tag.UnitTag,
+                                        Type = _tag.UnitType,
+                                        Unit = _tag.Unit,
+                                        Category = _tag.Category,
+                                        Description = _tag.Description,
+                                        TagValue = data[1].ToDecimalFromString(),
+                                        InDate = DateTime.UtcNow,
+                                        LogDate = _dt
+                                    };
+                                    //tagData.Name = _tag.UnitTag;
+                                    //tagData.Type = _tag.UnitType;
+                                    //tagData.Unit = _tag.Unit;
+                                    //tagData.Category = _tag.Category;
+                                    //tagData.Description = _tag.Description;
+                                    //tagData.TagValue = data[1].ToDecimalFromString();
+                                    //tagData.InDate = DateTime.UtcNow;
+                                    //tagData.LogDate = _dt;
+
+                                    await db.Tags.AddAsync(tagData);
+                                }
+                            }
+
+
+
+                        }
+
+                        await db.SaveChangesAsync();
+                        // Commit the transaction
+                        await transaction.CommitAsync();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        // Roll back the transaction if an error occurs
+                        await transaction.RollbackAsync();
+                        // Log the exception or rethrow it as needed
+                        _logger.LogError($"Error saving data to the database: {ex.Message}");
+                        throw;
+                    }
                 }
-                await db.SaveChangesAsync();
+
+
+  
 
             }
         }
