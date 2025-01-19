@@ -25,10 +25,18 @@ namespace IgnisWorkerService.Utilities
             {
                 try
                 {
-                    //string customFormat = "MM/dd/yyyy hh:mm:ss"; // Custom format
-                    DateTime localDt;
-                    var valid = DateTime.TryParse(val, out localDt);
-                    return localDt.ToUniversalTime();
+                    // Define Central Time zone
+                    TimeZoneInfo centralTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+
+                    // Parse the string into a DateTime object
+                    DateTime centralTime;
+                    bool valid = DateTime.TryParse(val, out centralTime);
+
+                    if (valid)
+                    {
+                        // Convert Central Time to UTC
+                        return TimeZoneInfo.ConvertTimeToUtc(centralTime, centralTimeZone);
+                    }
                 }
                 catch
                 {
